@@ -39,6 +39,10 @@ Write descriptions -->
 
 <body style="overflow:hidden;">
     <div class="jumbotron vertical-center">
+        <p class="text-center">Enter weights for weighted overlay analysis below.<br>To determine weights using the
+            Analytical Hierarchical Process, complete <a
+                href="https://bpmsg.com/ahp/ahp-calc.php?n=5&c%5B0%5D=Hydric+soils&c%5B1%5D=Distance+to+existing+wetlands&c%5B2%5D=Saturation+index&c%5B3%5D=Land+cover&c%5B4%5D=Distance+to+watercourses"
+                target="_blank">this exercise</a> and enter the results below.</p>
         <form class="container text-center col-6" autocomplete="off">
             <div class="slidecontainer">
                 <span class="slider-label">Hydric soils</span>
@@ -74,7 +78,7 @@ Write descriptions -->
                 <label for="api_key">Access key:</label>
                 <input type="text" id="api_key" name="api_key"></div>
             <div> <button id="submit-button" type="button" class="btn btn-dark" style="margin-top:20px;">Submit</button>
-                <p id="weight-hint"></p>
+                <p id="weight-hint" style="bottom:-8px;left:138px;"></p>
             </div>
             <div id="response-text"></div>
 
@@ -103,7 +107,7 @@ Write descriptions -->
             }
             else {
                 $("#submit-button").prop('disabled', true);
-                $("#weight-hint").text("Weights must sum to 100")
+                $("#weight-hint").text("Weights must sum to 100%")
             }
         }
 
@@ -137,7 +141,7 @@ Write descriptions -->
                     headers: {
                         "Access-Control-Allow-Origin": "*",
                         "Access-Control-Allow-Headers": "origin, content-type, accept",
-                        "X-Api-Key": access_key 
+                        "X-Api-Key": access_key
                     },
                     type: "POST",
                     data: JSON.stringify(request_body),
