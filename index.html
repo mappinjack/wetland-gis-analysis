@@ -116,10 +116,17 @@ Write descriptions -->
 
         $(document).ready(function () {
             $("#submit-button").click(function () {
-                sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"]
+                var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
+                var request_body = {}
                 //TODO, use weights
                 access_key = $("#api_key")[0].value
 
+                for (i = 0; i < sliders.length; i++) {
+                    var slider_name = sliders[i].replace("slider-", "")
+                    var slider_val = $(`#${sliders[i]}`)[0].valueAsNumber
+                    request_body[slider_name] = slider_val
+                }
+                console.log("Request body: " + JSON.stringify(request_body))
 
                 $.ajax({
                     url: "https://cors-anywhere.herokuapp.com/https://qgla7odlrl.execute-api.us-east-1.amazonaws.com/default/raster_function2",
@@ -132,8 +139,8 @@ Write descriptions -->
                         "Access-Control-Allow-Headers": "origin, content-type, accept",
                         "X-Api-Key": access_key 
                     },
-                    jsonp: "callback",
-                    type: "GET",
+                    type: "POST",
+                    data: JSON.stringify(request_body),
                     success: function (data) {
                         $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["corsUrl"])
                         console.log('Success! Url: ' + data["corsUrl"]);

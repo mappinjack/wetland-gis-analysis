@@ -17,17 +17,20 @@ from osgeo.gdalconst import *
 
 s3_client = boto3.client("s3")
 gdal.AllRegister()
-RASTERS = ["WetlandExtent", "LandCover", "OverlandFlow", "SaturationIndex", "WetlandDistance"]
-
+RASTERS = {"hydric": "WetlandExtent", "land": "LandCover", "water": "OverlandFlow", "saturation": "SaturationIndex", "wetland": "WetlandDistance"}
 
 def lambda_handler(event, context):
+    weights = event["body"]
+    if not isinstance(weights, dict):
+        weights = json.loads(weights)
+    print(f"Weights: {weighs}")
     loadRasters("rasters3/")
     NDV, xsize, ysize, GeoT, Projection, DataType = getGeoInfo("WetlandExtent")
 
     overlayArray = numpy.zeros((ysize, xsize), numpy.float64)
 
-    for raster_name in RASTERS:
-        weight = 1  # TODO
+    for nickname, raster_name in RASTERS.items():
+        weight = weights[nickname] / 100.0 # Percent to proportion
         raster = gdal.Open(f"/vsimem/{raster_name}.tif")
         rasterArray = raster.GetRasterBand(1).ReadAsArray(0, 0, xsize, ysize)
         rasterArray = np.where(rasterArray is None or rasterArray > 10, 0, rasterArray)
@@ -89,7 +92,7 @@ def writeRasterToS3(input_raster="output", output_key="new"):
 
 
 def loadRasters(keyPath):
-    for raster_name in RASTERS:
+    for raster_name in RASTERS.values():
         raster_path = f"{keyPath}{raster_name}.tif"
         s3RasterObj = s3_client.get_object(Bucket="mappinjack-duc", Key=raster_path)
         gdal.FileFromMemBuffer(f"/vsimem/{raster_name}.tif", s3RasterObj["Body"].read())
