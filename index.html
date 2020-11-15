@@ -95,7 +95,6 @@ Write descriptions -->
             for (i = 0; i < sliders.length; i++) {
                 val = $(`#${sliders[i]}`)[0].valueAsNumber
                 sum += val
-                console.log(val)
             }
             $("#weight-sum").text(sum + '%')
             if (sum == 100) {
@@ -136,8 +135,8 @@ Write descriptions -->
                     jsonp: "callback",
                     type: "GET",
                     success: function (data) {
-                        $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["url"])
-                        console.log('Success!' + data["url"]);
+                        $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["corsUrl"])
+                        console.log('Success! Url: ' + data["corsUrl"]);
                     },
                     error: function (XMLHttpRequest, textStatus, errorThrown) {
                         $("#response-text").text("Error: " + errorThrown)
