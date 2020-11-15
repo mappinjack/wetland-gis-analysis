@@ -23,7 +23,7 @@ def lambda_handler(event, context):
     weights = event["body"]
     if not isinstance(weights, dict):
         weights = json.loads(weights)
-    print(f"Weights: {weighs}")
+    print(f"Weights: {weights}")
     loadRasters("rasters3/")
     NDV, xsize, ysize, GeoT, Projection, DataType = getGeoInfo("WetlandExtent")
 
