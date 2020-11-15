@@ -16,8 +16,6 @@ Write descriptions -->
         integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
     <link rel="stylesheet" type="text/css" href="style.css">
-
-    <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
         integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
         crossorigin="anonymous" />
@@ -29,7 +27,12 @@ Write descriptions -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
     <!-- <script src="plotty-master/dist/plotty.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/geotiff"></script> -->
 
@@ -37,7 +40,7 @@ Write descriptions -->
 </head>
 
 
-<body style="overflow:hidden;">
+<body>
     <div class="jumbotron vertical-center">
         <p class="text-center">Enter weights for weighted overlay analysis below.<br>To determine weights using the
             Analytical Hierarchical Process, complete <a
@@ -73,7 +76,10 @@ Write descriptions -->
             <div>
                 <p>Total weights value: <span id="weight-sum">100%</span></p>
             </div>
-
+            <div>
+                <p>Zoom/pan the map to your study area of interest in Southern Ontario</p>
+            </div>
+            <div id="map"></div>
             <div class="text-input">
                 <label for="api_key">Access key:</label>
                 <input type="text" id="api_key" name="api_key"></div>
@@ -86,6 +92,16 @@ Write descriptions -->
         </form>
     </div>
     <script>
+        var map = L.map('map', { "minZoom": 5 }).setView([43.890566, -78.939833], 11);
+        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/streets-v11',
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken: 'pk.eyJ1Ijoicmlrb3c5NSIsImEiOiJjajJtYnZhbmswMHV1MzN0ajM3NHNzOHh5In0.q6-T946dwyUkr1ml9-qRbw'
+        }).addTo(map);
+
 
         $(".slider").on("input change", function (e) {
             val = e.currentTarget.valueAsNumber
@@ -120,9 +136,12 @@ Write descriptions -->
 
         $(document).ready(function () {
             $("#submit-button").click(function () {
+                if (map.getZoom() < 11) {
+                    alert("Study area is too large. Please zoom in on the map.")
+                    return
+                }
                 var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
-                var request_body = {}
-                //TODO, use weights
+                var request_body = { "bounds": getAndFormatMapBounds() }
                 access_key = $("#api_key")[0].value
 
                 for (i = 0; i < sliders.length; i++) {
@@ -159,6 +178,10 @@ Write descriptions -->
             });
         });
 
+        function getAndFormatMapBounds() {
+            bounds = map.getBounds()
+            return [bounds["_southWest"]["lng"], bounds["_northEast"]["lat"], bounds["_northEast"]["lng"], bounds["_southWest"]["lat"]]
+        }
 
     </script>
 

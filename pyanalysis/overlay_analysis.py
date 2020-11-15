@@ -17,21 +17,31 @@ from osgeo.gdalconst import *
 
 s3_client = boto3.client("s3")
 gdal.AllRegister()
-RASTERS = {"hydric": "WetlandExtent", "land": "LandCover", "water": "OverlandFlow", "saturation": "SaturationIndex", "wetland": "WetlandDistance"}
+RASTERS = {
+    "hydric": "WetlandExtent",
+    "land": "LandCover",
+    "water": "OverlandFlow",
+    "saturation": "SaturationIndex",
+    "wetland": "WetlandDistance",
+}
+
 
 def lambda_handler(event, context):
     weights = event["body"]
     if not isinstance(weights, dict):
         weights = json.loads(weights)
     print(f"Weights: {weights}")
+    bounds = weights.pop("bounds")
     loadRasters("rasters3/")
-    NDV, xsize, ysize, GeoT, Projection, DataType = getGeoInfo("WetlandExtent")
+    NDV, xsize, ysize, GeoT, Projection, DataType = getGeoInfo("WetlandExtent", bounds)
 
     overlayArray = numpy.zeros((ysize, xsize), numpy.float64)
 
     for nickname, raster_name in RASTERS.items():
-        weight = weights[nickname] / 100.0 # Percent to proportion
-        raster = gdal.Open(f"/vsimem/{raster_name}.tif")
+        weight = weights[nickname] / 100.0  # Percent to proportion
+        raster = gdal.Translate(
+            "", gdal.Open(f"/vsimem/{raster_name}.tif", GA_ReadOnly), format="MEM", projWin=bounds
+        )
         rasterArray = raster.GetRasterBand(1).ReadAsArray(0, 0, xsize, ysize)
         rasterArray = np.where(rasterArray is None or rasterArray > 10, 0, rasterArray)
         weightedArray = rasterArray * weight
@@ -62,12 +72,13 @@ def lambda_handler(event, context):
         "body": json.dumps(
             {
                 "corsUrl": f"https://cors-anywhere.herokuapp.com/https://mappinjack-public.s3.ca-central-1.amazonaws.com/{outputKey}",
-                "downloadUrl": f"https://mappinjack-public.s3.ca-central-1.amazonaws.com/{outputKey}"
+                "downloadUrl": f"https://mappinjack-public.s3.ca-central-1.amazonaws.com/{outputKey}",
             }
         ),
         "headers": {"Access-Control-Allow-Origin": "*", "Content-Type": "application/json"},
     }
     # Follow: https://gis.stackexchange.com/questions/57005/python-gdal-write-new-raster-using-projection-from-old
+
 
 def writeRasterToS3(input_raster="output", output_key="new"):
     if "vsimem" not in input_raster:
@@ -81,7 +92,7 @@ def writeRasterToS3(input_raster="output", output_key="new"):
     data = gdal.VSIFReadL(1, size, f)
     gdal.VSIFCloseL(f)
 
-    #TODO apply color table?
+    # TODO apply color table?
 
     s3_client.put_object(Body=data, Bucket="mappinjack-public", Key=output_key)
     s3 = boto3.resource("s3")
@@ -98,9 +109,9 @@ def loadRasters(keyPath):
         gdal.FileFromMemBuffer(f"/vsimem/{raster_name}.tif", s3RasterObj["Body"].read())
 
 
-def getGeoInfo(raster_name):
+def getGeoInfo(raster_name, bounds):
     FileName = f"/vsimem/{raster_name}.tif"
-    SourceDS = gdal.Open(FileName, GA_ReadOnly)
+    SourceDS = gdal.Translate("", gdal.Open(FileName, GA_ReadOnly), format="MEM", projWin=bounds)
     NDV = SourceDS.GetRasterBand(1).GetNoDataValue()
     xsize = SourceDS.RasterXSize
     ysize = SourceDS.RasterYSize
