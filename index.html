@@ -84,6 +84,7 @@ Write descriptions -->
                 <label for="api_key">Access key:</label>
                 <input type="text" id="api_key" name="api_key"></div>
             <div> <button id="submit-button" type="button" class="btn btn-dark" style="margin-top:20px;">Submit</button>
+                <div id="submit-loader" class="justify-content-center"></div>
                 <p id="weight-hint" style="bottom:-8px;left:138px;"></p>
             </div>
             <div id="response-text"></div>
@@ -133,13 +134,15 @@ Write descriptions -->
             validateInputWeights()
         });
 
-
         $(document).ready(function () {
             $("#submit-button").click(function () {
                 if (map.getZoom() < 11) {
                     alert("Study area is too large. Please zoom in on the map.")
                     return
                 }
+                $("#submit-loader").addClass("loader")
+                $("#response-text").text("")
+                $("#submit-button").prop('disabled', true);
                 var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
                 var request_body = { "bounds": getAndFormatMapBounds() }
                 access_key = $("#api_key")[0].value
@@ -165,10 +168,14 @@ Write descriptions -->
                     type: "POST",
                     data: JSON.stringify(request_body),
                     success: function (data) {
+                        $("#submit-loader").removeClass("loader")
+                        $("#submit-button").prop('disabled', false);
                         $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["corsUrl"])
                         console.log('Success! Url: ' + data["corsUrl"]);
                     },
                     error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        $("#submit-loader").removeClass("loader")
+                        $("#submit-button").prop('disabled', false);
                         $("#response-text").text("Error: " + errorThrown)
                     }
 
