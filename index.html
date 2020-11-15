@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- 
+TODO:
+Resize Euclidean buffers (and tutorial?)
+Write modal
+Write tooltops
+Write descriptions -->
+
+
+<head>
+    <title>Wetland Analysis</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
+        integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
+        crossorigin="anonymous" />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <!-- <script src="plotty-master/dist/plotty.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/geotiff"></script> -->
+
+
+</head>
+
+
+<body style="overflow:hidden;">
+    <div class="jumbotron vertical-center">
+        <form class="container text-center col-6" autocomplete="off">
+            <div class="slidecontainer">
+                <span class="slider-label">Hydric soils</span>
+                <input id="slider-hydric" class="slider" type="range" min="0" max="100" value="20" step="5" />
+                <span id="slider-hydric-output" class="slider-value">20%</span>
+            </div>
+
+            <div class="slidecontainer">
+                <span class="slider-label">Distance to existing wetlands</span>
+                <input id="slider-wetland" class="slider" type="range" min="0" max="100" value="20" step="5" />
+                <span id="slider-wetland-output" class="slider-value">20%</span>
+            </div>
+            <div class="slidecontainer">
+                <span class="slider-label">Saturation index</span>
+                <input id="slider-saturation" class="slider" type="range" min="0" max="100" value="20" step="5" />
+                <span id="slider-saturation-output" class="slider-value">20%</span>
+            </div>
+            <div class="slidecontainer">
+                <span class="slider-label">Land cover</span>
+                <input id="slider-land" class="slider" type="range" min="0" max="100" value="20" step="5" />
+                <span id="slider-land-output" class="slider-value">20%</span>
+            </div>
+            <div class="slidecontainer">
+                <span class="slider-label">Distance to watercourses</span>
+                <input id="slider-water" class="slider" type="range" min="0" max="100" value="20" step="5" />
+                <span id="slider-water-output" class="slider-value">20%</span>
+            </div>
+            <div>
+                <p>Total weights value: <span id="weight-sum">100%</span></p>
+            </div>
+
+            <div class="text-input">
+                <label for="api_key">Access key:</label>
+                <input type="text" id="api_key" name="api_key"></div>
+            <div> <button id="submit-button" type="button" class="btn btn-dark" style="margin-top:20px;">Submit</button>
+                <p id="weight-hint"></p>
+            </div>
+            <div id="response-text"></div>
+
+
+        </form>
+    </div>
+    <script>
+
+        $(".slider").on("input change", function (e) {
+            val = e.currentTarget.valueAsNumber
+            $(`#${e.currentTarget.id}-output`).text(val + '%')
+            validateInputWeights()
+        });
+
+        function validateInputWeights() {
+            sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"]
+            var sum = 0;
+            for (i = 0; i < sliders.length; i++) {
+                val = $(`#${sliders[i]}`)[0].valueAsNumber
+                sum += val
+                console.log(val)
+            }
+            $("#weight-sum").text(sum + '%')
+            if (sum == 100) {
+                $("#submit-button").prop('disabled', false);
+                $("#weight-hint").text("")
+            }
+            else {
+                $("#submit-button").prop('disabled', true);
+                $("#weight-hint").text("Weights must sum to 100")
+            }
+        }
+
+        $("#submit-button").on("input change", function (e) {
+            val = e.currentTarget.valueAsNumber
+            $(`#${e.currentTarget.id}-output`).text(val)
+            validateInputWeights()
+        });
+
+
+        $(document).ready(function () {
+            $("#submit-button").click(function () {
+                sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"]
+                //TODO, use weights
+                access_key = $("#api_key")[0].value
+
+
+                $.ajax({
+                    url: "https://cors-anywhere.herokuapp.com/https://qgla7odlrl.execute-api.us-east-1.amazonaws.com/default/raster_function2",
+
+                    //data: { signature: authHeader },
+                    crossDomain: true,
+                    dataType: "json",
+                    headers: {
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Headers": "origin, content-type, accept",
+                        "X-Api-Key": access_key 
+                    },
+                    jsonp: "callback",
+                    type: "GET",
+                    success: function (data) {
+                        $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["url"])
+                        console.log('Success!' + data["url"]);
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        $("#response-text").text("Error: " + errorThrown)
+                    }
+
+                });
+
+
+            });
+        });
+
+
+    </script>
+
+</body>
