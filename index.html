@@ -1,12 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- 
-TODO:
-Resize Euclidean buffers (and tutorial?)
-Write modal
-Write tooltops
-Write descriptions -->
-
 
 <head>
     <title>Wetland Analysis</title>
@@ -33,45 +26,42 @@ Write descriptions -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""></script>
-    <!-- <script src="plotty-master/dist/plotty.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/geotiff"></script> -->
-
-
+    <script src='studyarea_extent.js'></script>
 </head>
-
 
 <body>
     <div class="jumbotron vertical-center">
-        <p class="text-center">Enter weights for weighted overlay analysis below.<br>To determine weights using the
+        <h1 class="text-center">Southern Ontario Wetland Analysis Tool</h1>
+        <p class="text-center">Enter weights for overlay analysis below.<br>To determine weights using the
             analytical hierarchy process, complete <a
-                href="https://bpmsg.com/ahp/ahp-calc.php?n=5&c%5B0%5D=Hydric+soils&c%5B1%5D=Distance+to+existing+wetlands&c%5B2%5D=Saturation+index&c%5B3%5D=Land+cover&c%5B4%5D=Distance+to+watercourses"
-                target="_blank">this exercise</a> and enter the results below.</p>
+                href="https://bpmsg.com/ahp/ahp-calc.php?n=5&c%5B0%5D=Hydric+soils&c%5B1%5D=Land+cover&c%5B2%5D=Saturation+index&c%5B3%5D=Distance+to+watercourses&c%5B4%5D=Distance+to+existing+wetlands"
+                target="_blank">this exercise</a> and enter the output weights below.<br>The default weights have been
+            configured by ecologists at Ducks Unlimited Canada.</p>
         <form class="container text-center col-6" autocomplete="off">
             <div class="slidecontainer">
                 <span class="slider-label">Hydric soils</span>
-                <input id="slider-hydric" class="slider" type="range" min="0" max="100" value="20" step="5" />
-                <span id="slider-hydric-output" class="slider-value">20%</span>
-            </div>
-
-            <div class="slidecontainer">
-                <span class="slider-label">Distance to existing wetlands</span>
-                <input id="slider-wetland" class="slider" type="range" min="0" max="100" value="20" step="5" />
-                <span id="slider-wetland-output" class="slider-value">20%</span>
-            </div>
-            <div class="slidecontainer">
-                <span class="slider-label">Saturation index</span>
-                <input id="slider-saturation" class="slider" type="range" min="0" max="100" value="20" step="5" />
-                <span id="slider-saturation-output" class="slider-value">20%</span>
+                <input id="slider-hydric" class="slider" type="range" min="0" max="100" value="50" step="5" />
+                <span id="slider-hydric-output" class="slider-value">50%</span>
             </div>
             <div class="slidecontainer">
                 <span class="slider-label">Land cover</span>
-                <input id="slider-land" class="slider" type="range" min="0" max="100" value="20" step="5" />
-                <span id="slider-land-output" class="slider-value">20%</span>
+                <input id="slider-land" class="slider" type="range" min="0" max="100" value="25" step="5" />
+                <span id="slider-land-output" class="slider-value">25%</span>
+            </div>
+            <div class="slidecontainer">
+                <span class="slider-label">Saturation index</span>
+                <input id="slider-saturation" class="slider" type="range" min="0" max="100" value="10" step="5" />
+                <span id="slider-saturation-output" class="slider-value">10%</span>
             </div>
             <div class="slidecontainer">
                 <span class="slider-label">Distance to watercourses</span>
-                <input id="slider-water" class="slider" type="range" min="0" max="100" value="20" step="5" />
-                <span id="slider-water-output" class="slider-value">20%</span>
+                <input id="slider-water" class="slider" type="range" min="0" max="100" value="10" step="5" />
+                <span id="slider-water-output" class="slider-value">10%</span>
+            </div>
+            <div class="slidecontainer">
+                <span class="slider-label">Distance to existing wetlands</span>
+                <input id="slider-wetland" class="slider" type="range" min="0" max="100" value="5" step="5" />
+                <span id="slider-wetland-output" class="slider-value">5%</span>
             </div>
             <div>
                 <p>Total weights value: <span id="weight-sum">100%</span></p>
@@ -134,6 +124,10 @@ Write descriptions -->
             validateInputWeights()
         });
 
+        studyarea_layer = L.geoJSON(studyarea_extent, {
+            style: {fillOpacity: 0}
+        }).addTo(map)
+
         $(document).ready(function () {
             $("#submit-button").click(function () {
                 if (map.getZoom() < 11) {
@@ -170,7 +164,7 @@ Write descriptions -->
                     success: function (data) {
                         $("#submit-loader").removeClass("loader")
                         $("#submit-button").prop('disabled', false);
-                        $("#response-text").html("Results prepared: Copy and paste the URL below into the <a href='http://app.geotiff.io/load' target='_blank'>web mapping application</a><br>" + data["corsUrl"])
+                        $("#response-text").html(`Results prepared:<br><a href='https://app.geotiff.io/?tool=identify&url=${data["corsUrl"]}' target='_blank'>Click here to open in a web map</a><br><a href='${data["downloadUrl"]}' target='_blank' download>Or click here to download the results to your computer for use in a desktop GIS</a>`)
                         console.log('Success! Url: ' + data["corsUrl"]);
                     },
                     error: function (XMLHttpRequest, textStatus, errorThrown) {
