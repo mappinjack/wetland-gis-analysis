@@ -112,7 +112,7 @@ body {
 	-webkit-animation: spin 1.5s linear infinite;
 	/* Safari */
 	animation: spin 1.5s linear infinite;
-	position:relative;
+	position: relative;
 	margin: auto;
 	top: -40px;
 	left: 70px;
