@@ -81,10 +81,12 @@ body {
 
 .slider-label {
 	width: 200px;
+	margin-top: 10px;
 }
 
 .slider-value {
 	width: 100px;
+	margin-top: 10px;
 }
 
 .text-input {
@@ -136,4 +138,8 @@ body {
 	100% {
 		transform: rotate(360deg);
 	}
+}
+
+#modal-click:hover {
+	cursor: pointer;
 }

@@ -2,7 +2,10 @@
 <html lang="en">
 
 <head>
-    <title>Wetland Analysis</title>
+    <title>SOWAT: Wetland Analysis</title>
+
+    <meta name="description" content="The Southern Ontario Wetland Analysis Tool (SOWAT) allows users to perform geographic analysis to
+investigate wetland restoration opportunities in Southern Ontario">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -26,17 +29,22 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+        integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
+        crossorigin="anonymous" />
     <script src='studyarea_extent.js'></script>
 </head>
 
 <body>
     <div class="jumbotron vertical-center">
         <h1 class="text-center">Southern Ontario Wetland Analysis Tool</h1>
-        <p class="text-center">Enter weights for overlay analysis below.<br>To determine weights using the
+        <p class="text-center">Enter weights for overlay analysis below.
+            <br>To determine weights using the
             analytical hierarchy process, complete <a
                 href="https://bpmsg.com/ahp/ahp-calc.php?n=5&c%5B0%5D=Hydric+soils&c%5B1%5D=Land+cover&c%5B2%5D=Saturation+index&c%5B3%5D=Distance+to+watercourses&c%5B4%5D=Distance+to+existing+wetlands"
-                target="_blank">this exercise</a> and enter the output weights below.<br>The default weights have been
-            configured by ecologists at Ducks Unlimited Canada.</p>
+                target="_blank">this exercise</a> and enter the output weights below.<br><a id="modal-click"
+                class="modal-text" data-toggle="modal" data-target="#aboutModal">Click here for
+                help and data descriptions.</a></p>
         <form class="container text-center col-6" autocomplete="off">
             <div class="slidecontainer">
                 <span class="slider-label">Hydric soils</span>
@@ -59,13 +67,24 @@
                 <span id="slider-water-output" class="slider-value">10%</span>
             </div>
             <div class="slidecontainer">
-                <span class="slider-label">Distance to existing wetlands</span>
+                <span class="slider-label">Distance to wetlands</span>
                 <input id="slider-wetland" class="slider" type="range" min="0" max="100" value="5" step="5" />
                 <span id="slider-wetland-output" class="slider-value">5%</span>
             </div>
             <div>
-                <p>Total weights value: <span id="weight-sum">100%</span></p>
+                <p style="margin-top:10px;">Total weights value: <span id="weight-sum">100%</span></p>
             </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="reclass-options" id="reclass-radio-do" value="do"
+                    checked>
+                <label class="form-check-label" for="reclass-radio-do">Reclassify results into categories</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="reclass-options" id="reclass-radio-dont"
+                    value="dont">
+                <label class="form-check-label" for="reclass-radio-dont">Return raw index values</label>
+            </div>
+            <br>
             <div>
                 <p>Zoom/pan the map to your study area of interest in Southern Ontario</p>
             </div>
@@ -81,109 +100,177 @@
 
 
         </form>
-    </div>
-    <script>
-        var map = L.map('map', { "minZoom": 5 }).setView([43.890566, -78.939833], 12);
-        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-            maxZoom: 18,
-            id: 'mapbox/streets-v11',
-            tileSize: 512,
-            zoomOffset: -1,
-            accessToken: 'pk.eyJ1Ijoicmlrb3c5NSIsImEiOiJjajJtYnZhbmswMHV1MzN0ajM3NHNzOHh5In0.q6-T946dwyUkr1ml9-qRbw'
-        }).addTo(map);
+        <!-- Modal -->
+        <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="aboutModalLabel">About</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        This tool allows users to conduct a weighted overlay analysis on study areas in Southern
+                        Ontario. Relevant data sets
+                        can be weighted according to the user's preferences. Upon clicking the Submit button, the
+                        analysis will be conducted
+                        by applying the user's weights to each input and then returning a final suitability index for
+                        the study area, where all
+                        potential wetland restoration opportunities will receive a value ranging between 0 and 1, with 0
+                        being totally unsuitable,
+                        and one representing the ideal wetland restoration locations. The default weights have been
+                        configured by wetland ecologists
+                        at Ducks Unlimited Canada.
+                        <br>
+                        <hr>
+                        <b>Data descriptions</b>
+                        <ul>
+                            <li><b>Hydric soils: </b>Locations where soil is saturated by water. This model uses
+                                historical wetland locations (c. 1800) as a proxy</li>
+                            <li><b>Land cover: </b>Dominant land cover type. Urban environments are completely removed,
+                                forests are unfavourable, and untreed/lightly treed areas are preferred</li>
+                            <li><b>Wetness index: </b>An indicator for soil saturation from surface runoff</li>
+                            <li><b>Distance to watercourses: </b>Straight-line distance from an existing watercourse in
+                                the Ontario Hydro Network</li>
+                            <li><b>Distance to wetlands: </b>Straight-line distance to existing wetlands. Can contribute
+                                to wildlife corridors</li>
+                        </ul>
+                        <hr>
+                        <b>Further reading</b>
+                        <ul>
+                            <li><a href="https://www.passagetechnology.com/what-is-the-analytic-hierarchy-process"
+                                    target="_blank">AHP</a></li>
+                            <li><a href="https://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/understanding-overlay-analysis.htm"
+                                    , target="_blank">Weighted overlay</a></li>
+                            <li><a href="https://ontarionature.org/campaigns/wetlands/" target="_blank">Wetlands</a>
+                            </li>
+                            <li><a href="https://www.ducks.ca/" target="_blank">Ducks Unlimited Canada</a></li>
+                        </ul>
+                        <hr>
+                        This tool was created by students in Ryerson University's Master's of Spatial Analysis program.
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            var map = L.map('map', { "minZoom": 5 }).setView([43.890566, -78.939833], 12);
+            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                maxZoom: 18,
+                id: 'mapbox/streets-v11',
+                tileSize: 512,
+                zoomOffset: -1,
+                accessToken: 'pk.eyJ1Ijoicmlrb3c5NSIsImEiOiJjajJtYnZhbmswMHV1MzN0ajM3NHNzOHh5In0.q6-T946dwyUkr1ml9-qRbw'
+            }).addTo(map);
 
 
-        $(".slider").on("input change", function (e) {
-            val = e.currentTarget.valueAsNumber
-            $(`#${e.currentTarget.id}-output`).text(val + '%')
-            validateInputWeights()
-        });
+            $(".slider").on("input change", function (e) {
+                val = e.currentTarget.valueAsNumber
+                $(`#${e.currentTarget.id}-output`).text(val + '%')
+                validateInputWeights()
+            });
 
-        function validateInputWeights() {
-            sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"]
-            var sum = 0;
-            for (i = 0; i < sliders.length; i++) {
-                val = $(`#${sliders[i]}`)[0].valueAsNumber
-                sum += val
-            }
-            $("#weight-sum").text(sum + '%')
-            if (sum == 100) {
-                $("#submit-button").prop('disabled', false);
-                $("#weight-hint").text("")
-            }
-            else {
-                $("#submit-button").prop('disabled', true);
-                $("#weight-hint").text("Weights must sum to 100%")
-            }
-        }
-
-        $("#submit-button").on("input change", function (e) {
-            val = e.currentTarget.valueAsNumber
-            $(`#${e.currentTarget.id}-output`).text(val)
-            validateInputWeights()
-        });
-
-        studyarea_layer = L.geoJSON(studyarea_extent, {
-            style: {fillOpacity: 0}
-        }).addTo(map)
-
-        $(document).ready(function () {
-            $("#submit-button").click(function () {
-                if (map.getZoom() < 11) {
-                    alert("Study area is too large. Please zoom in on the map.")
-                    return
-                }
-                $("#submit-loader").addClass("loader")
-                $("#response-text").text("")
-                $("#submit-button").prop('disabled', true);
-                var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
-                var request_body = { "bounds": getAndFormatMapBounds() }
-                access_key = $("#api_key")[0].value
-
+            function validateInputWeights() {
+                sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"]
+                var sum = 0;
                 for (i = 0; i < sliders.length; i++) {
-                    var slider_name = sliders[i].replace("slider-", "")
-                    var slider_val = $(`#${sliders[i]}`)[0].valueAsNumber
-                    request_body[slider_name] = slider_val
+                    val = $(`#${sliders[i]}`)[0].valueAsNumber
+                    sum += val
                 }
-                console.log("Request body: " + JSON.stringify(request_body))
+                $("#weight-sum").text(sum + '%')
+                if (sum == 100) {
+                    $("#submit-button").prop('disabled', false);
+                    $("#weight-hint").text("")
+                }
+                else {
+                    $("#submit-button").prop('disabled', true);
+                    $("#weight-hint").text("Weights must sum to 100%")
+                }
+            }
 
-                $.ajax({
-                    url: "https://cors-anywhere.herokuapp.com/https://qgla7odlrl.execute-api.us-east-1.amazonaws.com/default/rasterio_test",
+            $("#submit-button").on("input change", function (e) {
+                val = e.currentTarget.valueAsNumber
+                $(`#${e.currentTarget.id}-output`).text(val)
+                validateInputWeights()
+            });
 
-                    //data: { signature: authHeader },
-                    crossDomain: true,
-                    dataType: "json",
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                        "Access-Control-Allow-Headers": "origin, content-type, accept",
-                        "X-Api-Key": access_key
-                    },
-                    type: "POST",
-                    data: JSON.stringify(request_body),
-                    success: function (data) {
-                        $("#submit-loader").removeClass("loader")
-                        $("#submit-button").prop('disabled', false);
-                        $("#response-text").html(`Results prepared:<br><a href='https://app.geotiff.io/?tool=identify&url=${data["corsUrl"]}' target='_blank'>Click here to open in a web map</a><br><a href='${data["downloadUrl"]}' target='_blank' download>Or click here to download the results to your computer for use in a desktop GIS</a>`)
-                        console.log('Success! Url: ' + data["corsUrl"]);
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-                        $("#submit-loader").removeClass("loader")
-                        $("#submit-button").prop('disabled', false);
-                        $("#response-text").text("Error: " + errorThrown)
+            studyarea_layer = L.geoJSON(studyarea_extent, {
+                style: { fillOpacity: 0 }
+            }).addTo(map)
+
+            $('#modal-click').on('shown.bs.modal', function () {
+                $('#modal-click').trigger('focus')
+            })
+            $(document).ready(function () {
+                $("#submit-button").click(function () {
+                    if (map.getZoom() < 11) {
+                        alert("Study area is too large. Please zoom in on the map.")
+                        return
+                    }
+                    $("#submit-loader").addClass("loader")
+                    $("#response-text").text("")
+                    $("#submit-button").prop('disabled', true);
+                    var reclasstext = $('input[name=reclass-options]:checked').val()
+                    if (reclasstext == "do") {
+                        var reclassbool = true
+                    }
+                    else {
+                        var reclassbool = false
                     }
 
+                    var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
+                    var request_body = { "bounds": getAndFormatMapBounds(), "do_reclass": reclassbool }
+                    access_key = $("#api_key")[0].value
+
+                    for (i = 0; i < sliders.length; i++) {
+                        var slider_name = sliders[i].replace("slider-", "")
+                        var slider_val = $(`#${sliders[i]}`)[0].valueAsNumber
+                        request_body[slider_name] = slider_val
+                    }
+                    console.log("Request body: " + JSON.stringify(request_body))
+
+                    $.ajax({
+                        url: "https://cors-anywhere.herokuapp.com/https://qgla7odlrl.execute-api.us-east-1.amazonaws.com/default/rasterio_test",
+
+                        //data: { signature: authHeader },
+                        crossDomain: true,
+                        dataType: "json",
+                        headers: {
+                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Headers": "origin, content-type, accept",
+                            "X-Api-Key": access_key
+                        },
+                        type: "POST",
+                        data: JSON.stringify(request_body),
+                        success: function (data) {
+                            $("#submit-loader").removeClass("loader")
+                            $("#submit-button").prop('disabled', false);
+                            $("#response-text").html(`Results prepared:<br><a href='https://app.geotiff.io/?tool=identify&url=${data["corsUrl"]}' target='_blank'>Click here to open in a web map</a><br><a href='${data["downloadUrl"]}' target='_blank' download>Or click here to download the results to your computer for use in a desktop GIS</a>`)
+                            console.log('Success! Url: ' + data["corsUrl"]);
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            $("#submit-loader").removeClass("loader")
+                            $("#submit-button").prop('disabled', false);
+                            $("#response-text").text("Error: " + errorThrown)
+                        }
+
+                    });
+
+
                 });
-
-
             });
-        });
 
-        function getAndFormatMapBounds() {
-            bounds = map.getBounds()
-            return [bounds["_southWest"]["lng"], bounds["_northEast"]["lat"], bounds["_northEast"]["lng"], bounds["_southWest"]["lat"]]
-        }
+            function getAndFormatMapBounds() {
+                bounds = map.getBounds()
+                return [bounds["_southWest"]["lng"], bounds["_northEast"]["lat"], bounds["_northEast"]["lng"], bounds["_southWest"]["lat"]]
+            }
 
-    </script>
+        </script>
 
 </body>

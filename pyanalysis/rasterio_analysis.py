@@ -30,7 +30,7 @@ def rescale_array(nickname, a):
         # Assuming only 1 and 0s allowed
         print(f"No rescaling for {nickname}")
         if nickname == "land":
-            return numpy.where(a == 0, 0.3, a)
+            return numpy.where(a == 0, 0.01, a)
         else:
             return numpy.where(a > 1, 0, a)
     if raster_rescale_dict[nickname] == "minmaxinverse":
@@ -40,6 +40,29 @@ def rescale_array(nickname, a):
         print(f"Rescaling {nickname} using minmax")
         return (a - numpy.nanmin(a)) / (numpy.nanmax(a) - numpy.nanmin(a))
 
+def reclass_array(a):
+    #jnb = JenksNaturalBreaks(nb_class=4)
+    print("Reclassifying array")
+    print("Raveling")
+    #flat_array = a.ravel()
+    print("Deleting 0s")
+    #flat_array = numpy.delete(flat_array, [0])
+    print("Creating breaks")
+    #print(type(flat_array))
+    #print(len(flat_array))
+    #jnb.fit(flat_array)
+    print('Fit complete')
+    #breaks = jnb.inner_breaks_
+    #flat_array = a.flatten()
+    breaks = [0.2, 0.5, 0.7, 0.9, 1]#jenkspy.jenks_breaks(flat_array, nb_class=4)
+    #breaks = [numpy.percentile(a, 30), numpy.percentile(a, 50), numpy.percentile(a, 70), numpy.percentile(a, 85), numpy.percentile(a, 100)]
+    
+    print("Reclassing")
+    for i, b in enumerate(breaks):
+        a = numpy.where((a <= b) & (a > 0), i+1, a)
+        #numpy.where(a <= b and a > 0, i+1, a)
+    return a
+
 
 def lambda_handler(event, context):
     weights = event["body"]
@@ -47,6 +70,7 @@ def lambda_handler(event, context):
         weights = json.loads(weights)
     print(f"User input: {weights}")
     user_bounds = weights.pop("bounds")
+    do_reclass = weights.pop("do_reclass")
     user_bounds = [user_bounds[0], user_bounds[3], user_bounds[2], user_bounds[1]]
     overlay_array = None
     profile = None
@@ -76,6 +100,8 @@ def lambda_handler(event, context):
     
     # Reset nan to 0 for summing raster values
     overlay_array = numpy.nan_to_num(overlay_array)
+    if do_reclass:
+        overlay_array = reclass_array(overlay_array)
     profile["dtype"] = rasterio.float32
     s3_client = boto3.client("s3")
     with MemoryFile() as memfile:
