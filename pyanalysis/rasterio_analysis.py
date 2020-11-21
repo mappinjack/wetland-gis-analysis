@@ -70,7 +70,6 @@ def lambda_handler(event, context):
         weights = json.loads(weights)
     print(f"User input: {weights}")
     user_bounds = weights.pop("bounds")
-    do_reclass = weights.pop("do_reclass")
     user_bounds = [user_bounds[0], user_bounds[3], user_bounds[2], user_bounds[1]]
     overlay_array = None
     profile = None
@@ -100,8 +99,6 @@ def lambda_handler(event, context):
     
     # Reset nan to 0 for summing raster values
     overlay_array = numpy.nan_to_num(overlay_array)
-    if do_reclass:
-        overlay_array = reclass_array(overlay_array)
     profile["dtype"] = rasterio.float32
     s3_client = boto3.client("s3")
     with MemoryFile() as memfile:
@@ -110,7 +107,7 @@ def lambda_handler(event, context):
             dataset.write(overlay_array.astype(rasterio.float32), indexes=1)
             dataset.close()
         print("Writing raster to S3")
-        file_key = "wetland_overlay.tif"
+        file_key = "sowat_overlay.tif"
         s3_client.put_object(Body=memfile, Bucket="mappinjack-public", Key=file_key)
         s3 = boto3.resource("s3")
         object_acl = s3.ObjectAcl("mappinjack-public", file_key)

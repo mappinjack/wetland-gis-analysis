@@ -74,16 +74,6 @@ investigate wetland restoration opportunities in Southern Ontario">
             <div>
                 <p style="margin-top:10px;">Total weights value: <span id="weight-sum">100%</span></p>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="reclass-options" id="reclass-radio-dont" value="dont"
-                    checked>
-                <label class="form-check-label" for="reclass-radio-dont">Return raw index values</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="reclass-options" id="reclass-radio-do" value="do">
-                <label class="form-check-label" for="reclass-radio-do">Reclassify results into categories</label>
-            </div>
-            <br>
             <div>
                 <p>Zoom/pan the map to your study area of interest in Southern Ontario</p>
             </div>
@@ -141,13 +131,15 @@ investigate wetland restoration opportunities in Southern Ontario">
                         <hr>
                         <b>Further reading</b>
                         <ul>
-                            <li><a href="https://www.passagetechnology.com/what-is-the-analytic-hierarchy-process"
-                                    target="_blank">AHP</a></li>
-                            <li><a href="https://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/understanding-overlay-analysis.htm"
-                                    , target="_blank">Weighted overlay</a></li>
+                            <li><a href="https://www.ducks.ca/" target="_blank">Ducks Unlimited Canada</a></li>
                             <li><a href="https://ontarionature.org/campaigns/wetlands/" target="_blank">Wetlands</a>
                             </li>
-                            <li><a href="https://www.ducks.ca/" target="_blank">Ducks Unlimited Canada</a></li>
+                            <li><a href="https://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/understanding-overlay-analysis.htm"
+                                    target="_blank">Weighted overlay</a></li>
+                            <li><a href="https://www.passagetechnology.com/what-is-the-analytic-hierarchy-process"
+                                    target="_blank">AHP</a></li>
+
+
                         </ul>
                         <hr>
                         This tool was created by students in Ryerson University's Master's of Spatial Analysis program.
@@ -191,8 +183,12 @@ investigate wetland restoration opportunities in Southern Ontario">
                 }
                 else {
                     $("#submit-button").prop('disabled', true);
-                    $("#weight-hint").text("Weights must sum to 100%")
+                    $("#weight-hint").html("<b>Weights must sum to exactly 100% before submitting</b>")
                 }
+                if ($("#response-text").text().includes("Error:")) {
+                    $("#response-text").text("")
+                }
+
             }
 
             $("#submit-button").on("input change", function (e) {
@@ -217,16 +213,9 @@ investigate wetland restoration opportunities in Southern Ontario">
                     $("#submit-loader").addClass("loader")
                     $("#response-text").text("")
                     $("#submit-button").prop('disabled', true);
-                    var reclasstext = $('input[name=reclass-options]:checked').val()
-                    if (reclasstext == "do") {
-                        var reclassbool = true
-                    }
-                    else {
-                        var reclassbool = false
-                    }
 
                     var sliders = ["slider-hydric", "slider-wetland", "slider-saturation", "slider-land", "slider-water"];
-                    var request_body = { "bounds": getAndFormatMapBounds(), "do_reclass": reclassbool }
+                    var request_body = { "bounds": getAndFormatMapBounds() }
                     access_key = $("#api_key")[0].value
 
                     for (i = 0; i < sliders.length; i++) {
@@ -258,6 +247,9 @@ investigate wetland restoration opportunities in Southern Ontario">
                         error: function (XMLHttpRequest, textStatus, errorThrown) {
                             $("#submit-loader").removeClass("loader")
                             $("#submit-button").prop('disabled', false);
+                            if (errorThrown == "Forbidden") {
+                                errorThrown = "Not authorized. Please verify you have entered a valid access key."
+                            }
                             $("#response-text").text("Error: " + errorThrown)
                         }
 
